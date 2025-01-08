@@ -1,173 +1,107 @@
-Soft T UE Installation Guide
-============================
+.. note:: 
 
-This project provides a GUI enabling users to run a series of white-box
-and black-box tests on the SRS RAN gNodeB.
+    Soft-Tester UE is designed to run on Ubuntu and is tested on Ubuntu 24.04.
 
-The best way to install everything the Soft T UE system is using our
-install scripts:
 
-.. code:: bash
+============
+Installation
+============
 
-   sudo ./scripts/install-ue.sh && sudo ./scripts/install-gnb.sh && sudo ./scripts/install-open5gs.sh
+Build Tools and Dependencies
+----------------------------
 
-then test the installation by running:
+The Soft-Tester UE system has the following necessary dpendencies. Please install them beforehand.
 
-.. code:: bash
+    - `Docker <https://docs.docker.com/engine/install/ubuntu/>`_
+    - `pip <https://pip.pypa.io/en/stable/installation/>`_
+    - `venv <https://pypi.org/project/virtualenv/>`_
+    - `UHD <https://files.ettus.com/manual/page_build_guide.html>`_ (build from sources recommended)
 
-   sudo ./scripts/headless-test.sh
 
-Setup
------
+UE side (Machine A)
+-------------------
 
-To set up this project (currently, for ZeroMQ):
+Clone Soft-Tester UE repository:
 
-1. Install the required build tools for the srsRAN 4G and the `srsRAN
-   project <https://docs.srsran.com/projects/project/en/latest/user_manuals/source/installation.html#manual-installation>`__.
-   For Ubuntu:
-.. code:: bash
+.. code-block:: bash
 
-   sudo apt-get install cmake make gcc g++ pkg-config libfftw3-dev libmbedtls-dev libsctp-dev libyaml-cpp-dev libgtest-dev
-   sudo apt-get install libzmq3-dev
-   sudo apt install net-tools libboost-all-dev libconfig++-dev iperf3 git libxcb-cursor0? libgles2-mesa-dev?
+   git clone https://github.com/oran-testing/soft-t-ue && git submodule update --init --recursive
 
-2. `Build <https://docs.srsran.com/projects/project/en/latest/tutorials/source/srsUE/source/index.html#id3>`__
-   the srsRAN project with ZeroMQ enabled. Also follow the last few
-   steps of the general installation
-   `instructions <https://docs.srsran.com/projects/4g/en/latest/general/source/1_installation.html#gen-installation>`__.
-   Overall:
+To build the UE controller and webGUI, run:
 
-.. code:: bash
+.. code-block:: bash
 
-   git clone https://github.com/oran-testing/srsRAN_Project.git
-   cd srsRAN_Project
-   git checkout ue-tester
-   mkdir build
-   cd build
-   cmake ../ -DENABLE_EXPORT=ON -DENABLE_ZEROMQ=ON
-   make -j $(nproc)
-   make test -j $(nproc)
-   sudo make install
+   cd soft-t-ue/docker
+   sudo docker compose build controller webui  --no-cache
 
-3. `Build <https://docs.srsran.com/projects/4g/en/latest/app_notes/source/zeromq/source/index.html>`__ the srsRAN 4G with ZeroMQ enabled. Specifically:
+gNB side (Machine B)
+--------------------
 
-.. code:: bash
+Clone Soft-Tester UE repository and srsRAN_Project separately:
 
-   git clone https://github.com/oran-testing/srsRAN_4G.git
-   cd srsRAN_4G
-   git checkout ue-tester
-   mkdir build
-   cd build
-   cmake ../
-   make -j $(nproc)
-   make test
-   sudo make install
-   srsran_install_configs.sh user
+.. note:: 
 
-4. Install `Docker <https://docs.docker.com/desktop/install/linux-install/>`__.
+    Please refer to the official installation guide for `srsRAN_Project <https://docs.srsran.com/projects/project/en/latest/user_manuals/source/installation.html>`_ .
 
-5. Build the Open5G core `Docker image <https://docs.srsran.com/projects/project/en/latest/tutorials/source/srsUE/source/index.html#open5gs-core>`__:
+.. code-block:: bash
 
-.. code:: bash
+   git clone https://github.com/oran-testing/soft-t-ue && git submodule update --init --recursive
+   git clone https://github.com/srsran/srsRAN_Project
+s
+
+Install dockerized Open5GS:
+
+.. code-block:: bash
 
    cd srsRAN_Project/docker
-   docker compose build
-6. Perform network setup:
-
-.. code:: bash
-
-   sudo ip netns add ue1
-   sudo ip netns list
+   sudo systemctl restart docker
+   sudo docker compose build 5gc
 
 Running
--------
+#######
 
-To run this project (ZeroMQ):
+.. warning::
+    Always begin the experiment with UE first, otherwise, the connection will fail.
 
-1. `Run <https://docs.srsran.com/projects/project/en/latest/tutorials/source/srsUE/source/index.html#open5gs-core>`__ the Open5G core:
+UE side (Machine A):
+-------------------
 
-.. code:: bash
+To run the UE with controller and webGUI:
+
+.. code-block:: bash
+
+   cd soft-t-ue/docker
+   sudo docker compose up controller webui
+
+To see the metrics, open `http://localhost:3000/ <http://localhost:3000/>`_ in the browser.
+
+
+gNB side (Machine B):
+--------------------
+
+To run the Open5GS:
+
+.. code-block:: bash
 
    cd srsRAN_Project/docker
-   docker compose up 5gc
+   sudo docker compose up 5gc
 
-2. Run gNodeB:
 
-.. code:: bash
+To run the gNB:
 
-   cd srsRAN_Project
-   sudo gnb -c configs/gnb_zmq.yaml
-3. Run the UE:
+.. code-block:: bash
 
-.. code:: bash
+   sudo gnb -c ./soft-t-ue/configs/zmq/gnb_zmq_docker.yaml
 
-   cd srsRAN_4G/build
-   sudo srsue ~/.config/srsran/ue.conf
+.. note:: 
 
-4. Perform more `network setup <https://docs.srsran.com/projects/4g/en/latest/app_notes/source/zeromq/source/index.html#network-namespace-creation>`__
-   (one-time setup):
+   If running with docker compose,use gnb_zmq_docker.yaml, otherwise, use gnb_zmq.yaml.
 
-.. code:: bash
+Optionally, the gNB can also be directly started with:
 
-   sudo ip ro add 10.45.0.0/16 via 10.53.1.2
-   route -n
-   sudo ip netns exec ue1 ip route add default via 10.45.1.1 dev tun_srsue
-   sudo ip netns exec ue1 route -n
+.. code-block:: bash
 
-5. Do stuff.
+   sudo gnb -c ./soft-t-ue/configs/uhd/gnb_uhd.yaml
 
-      i. On the server:
 
-      .. code:: bash
-
-         docker compose exec 5gc bash
-         iperf3 -s -i 1
-
-      ii. On the client:
-
-      .. code:: bash
-
-         sudo ip netns exec ue1 iperf3 -c 10.45.1.1 -i 1 -t 60
-
-Software development plan
--------------------------
-
-1. Use Python, running on the UE, to script everything.
-
-2. Use PyQt6 as a GUI.
-
-3. To prepare the system, open a series of terminals; use asyncio to
-   stream data while also updating GUI.
-
-   i. Run the open 5G core.
-   ii. When it's up, run gNodeB.
-   iii. When it's up, run the 4G UE.
-   iv. When it's up, run iperf -s in the 5G core container.
-   v. When it's up, run iperf --json on the client. Listen to JSON data
-      then graph.
-
-4. Write a Python-based install script to download/install the entire
-   system from a single command.
-
-Python setup
-------------
-
-1. `Install <https://python-poetry.org/docs/#installation>`__ Poetry.
-2. Install this application:
-
-.. code:: bash
-
-   cd srsRAN_4G/ue-tester
-   poetry install
-
-3. Run the program
-
-.. code:: bash
-
-   poetry run python ue_tester.py
-
-Links
------
-
--  `5G \| ShareTechnote <https://sharetechnote.com/html/5G/Handbook_5G_Index.html>`__
--  `LTE Tutorials - YouTube <https://www.youtube.com/playlist?list=PLstYdSyXDHhYrhkVIU_kUBTYXQSqO_sfL>`__
+Once the connection establishes, you can check the webGUI localhost interface to collect the logs.
