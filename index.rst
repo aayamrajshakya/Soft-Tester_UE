@@ -16,42 +16,108 @@ This project is a security testing tool based on srsRAN Project's User Equipment
 - :doc:`UE Documentation <rstFiles/UE>`
 - :doc:`gNB Documentation <rstFiles/gNB>`
 
-**NOTE: This system is designed to run on Ubuntu and is tested on Ubuntu 24.04.**
+.. note:: 
+
+    Soft-Tester UE is designed to run on Ubuntu and is tested on Ubuntu 24.04.
+
+
+Build Tools and Dependencies
+----------------------------
+
+The Soft-Tester UE system has the following necessary dpendencies. Please install them beforehand.
+
+    - `Docker <https://docs.docker.com/engine/install/ubuntu/>`_
+    - `pip <https://pip.pypa.io/en/stable/installation/>`_
+    - `venv <https://pypi.org/project/virtualenv/>`_
+    - `UHD <https://files.ettus.com/manual/page_build_guide.html>`_ (build from sources recommended)
 
 Installation
-------------
-If testing with ZMQ one machine can be used. If using an RU run with two machines A and B.
+############
 
-To install the UE run (Machine A):
+UE side (Machine A)
+-------------------
 
-.. code-block:: bash
-
-   sudo ./scripts/install-ue.sh
-
-To install the gNB run (Machine B):
+Clone Soft-Tester UE repository:
 
 .. code-block:: bash
 
-   sudo ./scripts/install-open5gs.sh
-   sudo ./scripts/install-gnb.sh
+   git clone https://github.com/oran-testing/soft-t-ue && git submodule update --init --recursive
+
+To build the UE controller and webGUI, run:
+
+.. code-block:: bash
+
+   cd soft-t-ue/docker
+   sudo docker compose build controller webui  --no-cache
+
+gNB side (Machine B)
+--------------------
+
+Clone Soft-Tester UE repository and srsRAN_Project separately:
+
+.. code-block:: bash
+
+   git clone https://github.com/oran-testing/soft-t-ue && git submodule update --init --recursive
+   git clone https://github.com/srsran/srsRAN_Project
+
+.. note:: 
+
+    Please refer to the official installation guide for `srsRAN_Project <https://docs.srsran.com/projects/project/en/latest/user_manuals/source/installation.html>`_
+
+Install dockerized Open5GS:
+
+.. code-block:: bash
+
+   cd srsRAN_Project/docker
+   sudo systemctl restart docker
+   sudo docker compose build 5gc
 
 Running
--------
+#######
 
-To start the gNB daemon (Machine B):
+.. warning::
+    Always begin the experiment with UE first, otherwise, the connection will fail.
+
+UE side (Machine A):
+-------------------
+
+To run the UE with controller and webGUI:
+.. code-block:: bash
+
+   cd soft-t-ue/docker
+   sudo docker compose up controller webui
+
+To see the metrics, open `http://localhost:3000/` in the browser.
+
+gNB side (Machine B):
+--------------------
+
+To run the Open5GS:
 
 .. code-block:: bash
 
-   sudo systemctl daemon-reload
-   sudo systemctl start gnb-controller.service
+   cd srsRAN_Project/docker
+   sudo docker compose up 5gc
 
-To run the GUI (Machine A):
+
+To run the gNB:
 
 .. code-block:: bash
 
-   cd controller/ue
-   python3 main.py
+   sudo gnb -c ./soft-t-ue/configs/zmq/gnb_zmq_docker.yaml
 
+.. note:: 
+
+   If running with docker compose,use gnb_zmq_docker.yaml, otherwise, use gnb_zmq.yaml.
+
+Optionally, the gNB can also be directly started with:
+
+.. code-block:: bash
+
+   sudo gnb -c ./soft-t-ue/configs/uhd/gnb_uhd.yaml
+
+
+Once the connection establishes, you can check the webGUI localhost interface to collect the logs.
 
 System Architecture
 --------------------
