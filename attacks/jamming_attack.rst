@@ -1,4 +1,4 @@
-RACH Jamming Attack
+Jamming Attack
 ==========================================================
 
 Implementation (UE)

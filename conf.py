@@ -56,10 +56,6 @@ html_context = {
             '<i class="fa fa-bug fa-fw"></i> Report an issue',
             "https://github.com/oran-testing/soft-t-ue/issues",
         ),
-        (
-            '<i class="fa fa-comments-o  fa-fw"></i> Discussion board',
-            "https://github.com/oran-testing/soft-t-ue/discussions",
-        ),
     ],
 }
 

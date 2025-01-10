@@ -15,7 +15,6 @@ The Soft-Tester UE system has the following necessary dpendencies. Please instal
     - `Docker <https://docs.docker.com/engine/install/ubuntu/>`_
     - `pip <https://pip.pypa.io/en/stable/installation/>`_
     - `venv <https://pypi.org/project/virtualenv/>`_
-    - `UHD <https://files.ettus.com/manual/page_build_guide.html>`_ (build from sources recommended)
 
 
 UE side (Machine A)
@@ -37,17 +36,17 @@ To build the UE controller and webGUI, run:
 gNB side (Machine B)
 --------------------
 
-Clone Soft-Tester UE repository and srsRAN_Project separately:
+Clone Soft-Tester UE repository and srsRAN Project separately:
 
 .. note:: 
 
-    Please refer to the official installation guide for `srsRAN_Project <https://docs.srsran.com/projects/project/en/latest/user_manuals/source/installation.html>`_ .
+    Please refer to the official installation guide for `srsRAN Project <https://docs.srsran.com/projects/project/en/latest/user_manuals/source/installation.html>`_ .
 
 .. code-block:: bash
 
    git clone https://github.com/oran-testing/soft-t-ue && git submodule update --init --recursive
    git clone https://github.com/srsran/srsRAN_Project
-s
+
 
 Install dockerized Open5GS:
 
@@ -95,13 +94,6 @@ To run the gNB:
 
 .. note:: 
 
-   If running with docker compose,use gnb_zmq_docker.yaml, otherwise, use gnb_zmq.yaml.
-
-Optionally, the gNB can also be directly started with:
-
-.. code-block:: bash
-
-   sudo gnb -c ./soft-t-ue/configs/uhd/gnb_uhd.yaml
-
+   If running with ZMQ, use either `gnb_zmq_docker.yaml` or `gnb_zmq.yaml`. Otherwise, use `.../uhd/gnb_uhd.yaml`.
 
 Once the connection establishes, you can check the webGUI localhost interface to collect the logs.
